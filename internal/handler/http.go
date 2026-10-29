@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"CacheProject/internal/cache"
 	"encoding/json"
+	"github.com/all-in077/Project_cache/internal/cache"
 	"log"
 	"net/http"
 

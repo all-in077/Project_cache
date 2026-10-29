@@ -1,4 +1,4 @@
-module CacheProject
+module github.com/all-in077/Project_cache
 
 go 1.26.2
 

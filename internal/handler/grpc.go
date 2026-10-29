@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"CacheProject/internal/cache"
-	pb "CacheProject/proto"
 	"context"
+	"github.com/all-in077/Project_cache/internal/cache"
+	pb "github.com/all-in077/Project_cache/proto"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

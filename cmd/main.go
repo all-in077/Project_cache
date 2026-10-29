@@ -1,12 +1,12 @@
 package main
 
 import (
-	"CacheProject/internal/cache"
-	"CacheProject/internal/config"
-	"CacheProject/internal/handler"
-	pb "CacheProject/proto"
 	"context"
 	"fmt"
+	"github.com/all-in077/Project_cache/internal/cache"
+	"github.com/all-in077/Project_cache/internal/config"
+	"github.com/all-in077/Project_cache/internal/handler"
+	pb "github.com/all-in077/Project_cache/proto"
 	"log"
 	"net"
 	"net/http"
