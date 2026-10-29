@@ -20,7 +20,10 @@ import (
 
 func main() {
 	// 1. Конфиг
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("конфиг: %v", err)
+	}
 
 	// 2. Контекст который отменится при сигнале остановки
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -35,8 +38,12 @@ func main() {
 	httpHandler.RegisterRoutes(r)
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf(":%s", cfg.HTTPPort),
-		Handler: r,
+		Addr:              fmt.Sprintf(":%s", cfg.HTTPPort),
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {
@@ -75,6 +82,16 @@ func main() {
 		log.Printf("HTTP shutdown error: %v", err)
 	}
 
-	grpcServer.GracefulStop()
-	log.Println("серверы остановлены")
+	done := make(chan struct{})
+	go func() {
+		grpcServer.GracefulStop()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-shutdownCtx.Done():
+		log.Println("gRPC graceful stop не уложился в таймаут, останавливаю принудительно")
+		grpcServer.Stop()
+	}
 }

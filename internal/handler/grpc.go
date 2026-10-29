@@ -45,3 +45,13 @@ func (g *GRPCHandler) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.De
 	}
 	return &pb.DeleteResponse{Deleted: true}, nil
 }
+
+func (g *GRPCHandler) Stats(ctx context.Context, req *pb.StatsRequest) (*pb.StatsResponse, error) {
+	s := g.cache.Stats()
+	return &pb.StatsResponse{
+		Hits:        s["hits"],
+		Misses:      s["misses"],
+		Evictions:   s["evictions"],
+		CurrentSize: s["currentSize"],
+	}, nil
+}

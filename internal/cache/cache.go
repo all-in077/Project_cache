@@ -181,23 +181,30 @@ func (lc *LRUcache) Stats() map[string]int64 {
 }
 
 func (lc *LRUcache) startTTLWorker(ctx context.Context) {
-	ticker := time.NewTicker(lc.ttl / 2)
-	defer ticker.Stop()
-
 	go func() {
+		ticker := time.NewTicker(lc.ttl / 2)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
-				lc.mu.Lock()
-				for _, node := range lc.items {
-					if time.Now().After(node.expireAt) {
-						lc.removeNode(node)
-					}
-				}
-				lc.mu.Unlock()
+				lc.cleanupExpired()
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
+}
+
+func (lc *LRUcache) cleanupExpired() {
+	now := time.Now()
+
+	lc.mu.Lock()
+	defer lc.mu.Unlock()
+
+	for _, node := range lc.items {
+		if now.After(node.expireAt) {
+			lc.removeNode(node)
+		}
+	}
 }
