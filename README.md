@@ -1,4 +1,5 @@
 # Project_cache
+[![CI](https://github.com/all-in077/Project_cache/actions/workflows/ci.yml/badge.svg)](https://github.com/all-in077/Project_cache/actions/workflows/ci.yml)
 
 In-memory **LRU-кэш с TTL** на Go. Один и тот же кэш доступен по **HTTP (REST)** и **gRPC**.
 
