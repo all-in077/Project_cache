@@ -4,3 +4,4 @@ cache-app
 bin/
 .idea/
 .vscode/
+project_dump.txt

@@ -1,0 +1,5 @@
+.git
+.env
+project_dump.txt
+cache-app
+*.md
