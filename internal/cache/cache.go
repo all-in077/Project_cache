@@ -70,6 +70,7 @@ func (lc *LRUcache) removeNode(ptr *Node) {
 		ptr.next = nil
 	} else if ptr != lc.head && ptr == lc.tail {
 		lc.tail = ptr.prev
+		lc.tail.next = nil
 		ptr.prev = nil
 	} else {
 		ptr.prev.next = ptr.next
@@ -182,7 +183,7 @@ func (lc *LRUcache) Stats() map[string]int64 {
 
 func (lc *LRUcache) startTTLWorker(ctx context.Context) {
 	go func() {
-		ticker := time.NewTicker(lc.ttl / 2)
+		ticker := time.NewTicker(max(lc.ttl/2, time.Millisecond))
 		defer ticker.Stop()
 
 		for {

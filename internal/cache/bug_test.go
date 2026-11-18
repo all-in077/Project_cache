@@ -38,3 +38,11 @@ func TestTailDeleteThenTouchNewTail(t *testing.T) {
 		t.Fatalf("список=%d узлов, map=%d", n, len(c.items))
 	}
 }
+
+func TestTinyTTLDoesNotPanic(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c := NewLRUcache(1, time.Nanosecond, ctx)
+	c.Set("a", []byte("1"))
+	time.Sleep(50 * time.Millisecond) // дать воркеру создать тикер
+}
