@@ -1,0 +1,78 @@
+name: Deploy
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag (commit SHA) to deploy"
+        required: true
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+env:
+  IMAGE: ghcr.io/all-in077/project_cache
+  TAG: ${{ inputs.tag || github.event.workflow_run.head_sha }}
+jobs:
+  deploy-staging:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy
+        run: |
+          echo "Deploying $IMAGE:$TAG to staging"
+          docker pull "$IMAGE:$TAG"
+          docker image inspect "$IMAGE:$TAG" --format '{{index .RepoDigests 0}}'
+          docker run -d --name app -p 8080:8080 "$IMAGE:$TAG"
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 15); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/stats || true)
+            if [ "$code" = "200" ]; then echo "smoke OK"; exit 0; fi
+            sleep 2
+          done
+          docker logs app
+          exit 1
+  deploy-production:
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "Deploying $IMAGE:$TAG to production (key length ${#DEPLOY_KEY})"
+          docker pull "$IMAGE:$TAG"
+          docker image inspect "$IMAGE:$TAG" --format '{{index .RepoDigests 0}}'
+          docker run -d --name app -p 8080:8080 "$IMAGE:$TAG"
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 15); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/stats || true)
+            if [ "$code" = "200" ]; then echo "smoke OK"; exit 0; fi
+            sleep 2
+          done
+          docker logs app
+          exit 1
